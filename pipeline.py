@@ -75,7 +75,7 @@ REDIS_URL = os.environ.get('REDIS_URL', '')
 REDIS_TOKEN = os.environ.get('REDIS_TOKEN', '')
 REGION = os.environ.get('REGION', '')
 CSV_BUCKET_PREFIX = os.environ.get('CSV_BUCKET_PREFIX', 'CSV')
-FEATURES_BUCKET_PREFIX = os.environ.get('FEATURES_BUCKET_PREFIX', 'Features')
+FEATURES_BUCKET_PREFIX = os.environ.get('FEATURES_BUCKET_PREFIX', 'Features_Apple')
 CITY_NAME = os.environ.get('CITY_NAME', 'Unknown')
 INSTANCE_ID = (os.environ.get('INSTANCE_ID', '')
                or os.environ.get('CONTAINER_ID', '')
@@ -709,7 +709,6 @@ def _process_apple_pano(face_heics, faces_meta, panoid, config, heading_deg):
             out['error'] = view_result.error or 'view extraction failed'
             return out
 
-        jpeg_q = config.get('jpeg_quality', 95)
         for i, (view, meta) in enumerate(zip(view_result.views, view_result.metadata)):
             yaw = meta['yaw']
             if config.get('global_view') or heading_deg is not None:
@@ -717,10 +716,12 @@ def _process_apple_pano(face_heics, faces_meta, panoid, config, heading_deg):
             else:
                 fname = (f"{panoid}_zoom{config.get('zoom_level', 2)}"
                          f"_view{i:02d}_{yaw:.0f}deg.jpg")
-            ok, buf = cv2.imencode('.jpg', view, [cv2.IMWRITE_JPEG_QUALITY, jpeg_q])
-            if ok:
-                out['views'].append(buf.tobytes())
-                out['view_filenames'].append(fname)
+            # Push the raw RGB ndarray (uint8 HWC) — _decode_item expects this
+            # shape and feeds it directly to torchvision.to_tensor. Encoding
+            # to JPEG here would just bloat the queue and break to_tensor.
+            view_rgb = cv2.cvtColor(view, cv2.COLOR_BGR2RGB)
+            out['views'].append(view_rgb)
+            out['view_filenames'].append(fname)
         out['success'] = bool(out['views'])
         del equi, equi_bgr, imgs
     except Exception as e:

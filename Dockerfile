@@ -22,11 +22,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN python -c "import equilib, os; p = os.path.join(os.path.dirname(equilib.__file__), '__init__.py'); open(p, 'w').write('from equilib.equi2equi.base import Equi2Equi  # noqa: F401\\n')" && \
     python -c "from equilib import Equi2Equi; from streetlevel.lookaround import to_equirectangular; print('streetlevel + equilib OK')"
 
-# Cache MegaLoc architecture (hubconf.py + model code) — no weights downloaded
-RUN python -c "import torch; torch.hub._get_cache_or_reload('gmberton/MegaLoc', force_reload=False, trust_repo=True, calling_fn='load')"
-
-# MegaLoc model weights — downloaded from R2 by CI workflow, COPYd into image
-COPY models/megaloc/model.safetensors /app/models/megaloc/model.safetensors
+# Cache MegaLoc architecture + weights via torch.hub at build time so the
+# first runtime invocation isn't slow. (The Google variant baked weights
+# from R2 during CI; we skip that here for repo simplicity — runtime fetch
+# is plenty fast.)
+RUN python -c "import torch; m = torch.hub.load('gmberton/MegaLoc', 'get_trained_model', trust_repo=True); print('MegaLoc weights cached:', sum(p.numel() for p in m.parameters()), 'params')"
 
 # Application code
 COPY pipeline.py r2_storage.py redis_queue.py entrypoint.sh ./
