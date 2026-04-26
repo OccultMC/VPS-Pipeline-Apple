@@ -1,0 +1,27 @@
+# VPS Pipeline (Apple Look Around) Worker Dependencies
+numpy>=1.24.0
+pillow>=10.0.0
+opencv-python-headless>=4.8.0
+aiohttp>=3.9.0
+yarl>=1.9.0
+boto3>=1.28.0
+rich>=14.0.0
+
+# Apple Look Around HEIC face fetch + reproject
+streetlevel>=0.12
+pillow-heif>=0.16
+pycryptodome>=3.20
+protobuf>=4.25
+shapely>=2.0
+pyequilib>=0.5.8
+scipy>=1.10
+pyproj>=3.5
+
+# ML / Feature Extraction
+torch>=2.0.0
+torchvision>=0.15.0
+safetensors>=0.3.0
+timm>=0.9.0
+
+# Redis task queue (Upstash HTTP)
+upstash-redis>=1.0.0
